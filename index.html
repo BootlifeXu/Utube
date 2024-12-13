@@ -146,10 +146,11 @@ function createYouTubeEmbed(videoId) {
   // Handle errors when the iframe cannot load
   iframe.onerror = () => {
     iframe.parentElement.innerHTML =
-      '<p class="error">This video cannot be played. Embedding might be restricted.</p>';
+      '<p class="error">This video cannot be played. The video may have embedding restrictions or be unavailable.</p>';
   };
 
   return iframe;
+
 }
 
 // Function to handle video search
