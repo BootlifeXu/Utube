@@ -136,6 +136,12 @@
       color: #666;
       font-size: 14px;
     }
+
+    .loading {
+      font-size: 1.5em;
+      color: #005f6b;
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
@@ -144,6 +150,7 @@
   <input type="text" id="searchInput" placeholder="Enter video name">
   <button id="searchBtn">Search</button>
   <div id="results"></div>
+  <div id="loading" class="loading" style="display: none;">Loading videos...</div>
 
   <script>
     const CLIENT_ID = '1040996601945-glj12sf5la34kb04aku691c0o5ddeoai.apps.googleusercontent.com';
@@ -194,6 +201,8 @@
         return;
       }
 
+      document.getElementById('loading').style.display = 'block'; // Show loading message
+
       try {
         const response = await fetch(
           `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=10&key=${API_KEY}`,
@@ -214,6 +223,8 @@
       } catch (error) {
         console.error('Error fetching YouTube data:', error);
         alert('Failed to fetch video data. Please try again later.');
+      } finally {
+        document.getElementById('loading').style.display = 'none'; // Hide loading message
       }
     }
 
@@ -263,8 +274,12 @@
           'onError': function(event) {
             console.error('YouTube player error:', event);
             // Revert to thumbnail if there's an error
+            alert("Sorry, the video failed to load. Please try again.");
             thumbnail.style.display = 'block';
             container.style.display = 'none';
+          },
+          'onReady': function(event) {
+            console.log("Player ready!");
           }
         }
       });
