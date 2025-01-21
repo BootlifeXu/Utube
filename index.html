@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Search</title>
-  <script src="https://accounts.google.com/gsi/client"></script> <!-- New Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client"></script>
   <style>
     body {
       font-family: 'Arial', sans-serif;
@@ -88,11 +88,25 @@
       font-size: 14px;
       color: #666;
     }
+
+    .video-container {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%; /* 16:9 aspect ratio */
+    }
+
+    .video-container iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
   </style>
 </head>
 <body>
   <h1>Search</h1>
-  <div id="buttonDiv"></div> <!-- Google Sign-In button will be rendered here -->
+  <div id="buttonDiv"></div>
   <input type="text" id="searchInput" placeholder="Enter video name">
   <button id="searchBtn">Search</button>
   <div id="results"></div>
@@ -105,7 +119,6 @@
     let accessToken = null;
 
     window.onload = function () {
-      // Initialize the tokenClient
       tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
         scope: 'https://www.googleapis.com/auth/youtube.readonly',
@@ -117,7 +130,6 @@
         },
       });
 
-      // Initialize the Sign In With Google button
       google.accounts.id.initialize({
         client_id: CLIENT_ID,
         callback: handleCredentialResponse
@@ -131,7 +143,6 @@
 
     function handleCredentialResponse(response) {
       if (response.credential) {
-        // Get token for YouTube API access
         tokenClient.requestAccessToken();
       }
     }
@@ -180,11 +191,15 @@
         const videoDiv = document.createElement('div');
         videoDiv.innerHTML = `
           <h3>${video.snippet.title}</h3>
-          <iframe
-            src="https://www.youtube.com/embed/${video.id.videoId}"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen
-          ></iframe>
+          <div class="video-container">
+            <iframe
+              src="https://www.youtube.com/embed/${video.id.videoId}?origin=${window.location.origin}"
+              title="${video.snippet.title}"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+            ></iframe>
+          </div>
           <p>Channel: ${video.snippet.channelTitle}</p>
         `;
         resultsDiv.appendChild(videoDiv);
