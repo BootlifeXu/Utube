@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,6 +9,7 @@
   <!-- Add YouTube IFrame API -->
   <script src="https://www.youtube.com/iframe_api"></script>
   <style>
+    /* Global Styles */
     body {
       font-family: 'Arial', sans-serif;
       margin: 0;
@@ -25,11 +27,18 @@
     h1 {
       font-size: 2.5em;
       color: #005f6b;
-      margin-bottom: 20px;
+      margin-bottom: 40px;
       text-transform: uppercase;
       letter-spacing: 1px;
+      text-align: center;
     }
 
+    /* Sign-in Button */
+    #buttonDiv {
+      margin-bottom: 20px; /* Space between Sign-in button and search bar */
+    }
+
+    /* Search Bar Styles */
     #searchInput {
       padding: 12px 20px;
       font-size: 16px;
@@ -38,6 +47,12 @@
       border-radius: 5px;
       margin-bottom: 20px;
       background-color: #ffffff;
+      transition: all 0.3s ease;
+    }
+
+    #searchInput:focus {
+      border-color: #004c55;
+      outline: none;
     }
 
     #searchBtn {
@@ -55,13 +70,14 @@
       background-color: #004c55;
     }
 
+    /* Results Section */
     #results {
       display: flex;
       flex-direction: column;
       align-items: center;
       width: 80%;
       max-width: 1000px;
-      margin-top: 20px;
+      margin-top: 40px;
     }
 
     .video-item {
@@ -69,9 +85,10 @@
       padding: 20px;
       margin: 10px 0;
       width: 100%;
-      max-width: 600px;
+      max-width: 500px; /* Reduced width */
       border-radius: 8px;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      text-align: center;
     }
 
     .video-thumbnail {
@@ -114,7 +131,8 @@
       display: none;
       position: relative;
       width: 100%;
-      padding-bottom: 56.25%;
+      padding-bottom: 56.25%; /* Adjusting aspect ratio */
+      margin-top: 20px;
     }
 
     .video-container iframe {
@@ -129,6 +147,7 @@
     .video-info h3 {
       margin: 10px 0;
       color: #005f6b;
+      font-size: 18px;
     }
 
     .channel-name {
