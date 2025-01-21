@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>YouTube Music Search</title>
+  <title>Search</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -62,7 +62,7 @@
   </style>
 </head>
 <body>
-  <h1>sSEARCH</h1>
+  <h1>Search</h1>
   <input type="text" id="searchInput" placeholder="Enter song name">
   <button id="searchBtn">Search</button>
 
@@ -95,7 +95,7 @@
         videoDiv.innerHTML = `
           <h3>${video.snippet.title}</h3>
           <iframe
-            src="https://www.youtube.com/embed/${video.id.videoId}"
+            src="https://www.youtube.com/embed/${video.id.videoId}?autoplay=1"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowfullscreen
           ></iframe>
