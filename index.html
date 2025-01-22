@@ -146,12 +146,12 @@
     .video-info h3 {
       margin: 10px 0;
       color: #005f6b;
-      font-size: 15px;
+      font-size: 18px;
     }
 
     .channel-name {
       color: #666;
-      font-size: 12px;
+      font-size: 14px;
     }
   </style>
 </head>
@@ -171,12 +171,20 @@
     let currentPlayer = null;
 
     window.onload = function () {
+      // Check if the token is already stored in localStorage
+      const storedToken = localStorage.getItem('accessToken');
+      if (storedToken) {
+        accessToken = storedToken;
+        console.log('Using stored token');
+      }
+
       tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
         scope: 'https://www.googleapis.com/auth/youtube.readonly',
         callback: (tokenResponse) => {
           if (tokenResponse && tokenResponse.access_token) {
             accessToken = tokenResponse.access_token;
+            localStorage.setItem('accessToken', accessToken);  // Store token in localStorage
             console.log('Successfully authenticated');
           }
         },
