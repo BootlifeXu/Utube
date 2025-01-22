@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Search</title>
   <script src="https://accounts.google.com/gsi/client"></script>
+  <!-- Add YouTube IFrame API -->
   <script src="https://www.youtube.com/iframe_api"></script>
   <style>
     /* Global Styles */
@@ -31,10 +33,12 @@
       text-align: center;
     }
 
+    /* Sign-in Button */
     #buttonDiv {
-      margin-bottom: 20px;
+      margin-bottom: 20px; /* Space between Sign-in button and search bar */
     }
 
+    /* Search Bar Styles */
     #searchInput {
       padding: 12px 20px;
       font-size: 16px;
@@ -66,27 +70,25 @@
       background-color: #004c55;
     }
 
+    /* Results Section */
     #results {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 30px;
-      justify-content: center;
-      margin-top: 40px;
-      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 80%;
       max-width: 1000px;
+      margin-top: 40px;
     }
 
     .video-item {
       background-color: #fff;
       padding: 20px;
-      width: 200px;
+      margin: 10px 0;
+      width: 100%;
+      max-width: 500px; /* Reduced width */
       border-radius: 8px;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       text-align: center;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
     }
 
     .video-thumbnail {
@@ -97,8 +99,7 @@
 
     .video-thumbnail img {
       width: 100%;
-      height: 120px;
-      object-fit: cover;
+      height: auto;
       border-radius: 8px;
     }
 
@@ -130,7 +131,7 @@
       display: none;
       position: relative;
       width: 100%;
-      padding-bottom: 56.25%;
+      padding-bottom: 56.25%; /* Adjusting aspect ratio */
       margin-top: 20px;
     }
 
@@ -146,12 +147,12 @@
     .video-info h3 {
       margin: 10px 0;
       color: #005f6b;
-      font-size: 15px;
+      font-size: 18px;
     }
 
     .channel-name {
       color: #666;
-      font-size: 12px;
+      font-size: 14px;
     }
   </style>
 </head>
@@ -165,26 +166,17 @@
   <script>
     const CLIENT_ID = '1040996601945-glj12sf5la34kb04aku691c0o5ddeoai.apps.googleusercontent.com';
     const API_KEY = 'AIzaSyBtc90LkMjXkFE80-NinZmBUHeD6Fn0sVI';
-
+    
     let tokenClient;
     let accessToken = null;
-    let currentPlayer = null;
 
     window.onload = function () {
-      // Check if the token is already stored in localStorage
-      const storedToken = localStorage.getItem('accessToken');
-      if (storedToken) {
-        accessToken = storedToken;
-        console.log('Using stored token');
-      }
-
       tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
         scope: 'https://www.googleapis.com/auth/youtube.readonly',
         callback: (tokenResponse) => {
           if (tokenResponse && tokenResponse.access_token) {
             accessToken = tokenResponse.access_token;
-            localStorage.setItem('accessToken', accessToken);  // Store token in localStorage
             console.log('Successfully authenticated');
           }
         },
@@ -229,9 +221,9 @@
             }
           }
         );
-
+        
         const data = await response.json();
-
+        
         if (data.items) {
           displayResults(data.items);
         } else {
@@ -250,7 +242,7 @@
       videos.forEach(video => {
         const videoDiv = document.createElement('div');
         videoDiv.className = 'video-item';
-
+        
         videoDiv.innerHTML = `
           <div class="video-info">
             <h3>${video.snippet.title}</h3>
@@ -262,7 +254,7 @@
           </div>
           <div class="video-container" id="player-${video.id.videoId}"></div>
         `;
-
+        
         resultsDiv.appendChild(videoDiv);
       });
     }
@@ -270,40 +262,27 @@
     function loadVideo(videoId, thumbnailElement) {
       const container = thumbnailElement.nextElementSibling;
       const thumbnail = thumbnailElement;
-
-      if (currentPlayer) {
-        currentPlayer.stopVideo();
-        const previousContainer = document.querySelector(`#player-${currentPlayer.getVideoData().video_id}`);
-        previousContainer.parentElement.querySelector('.video-thumbnail').style.display = 'block';
-        previousContainer.style.display = 'none';
-        previousContainer.style.paddingBottom = '56.25%';
-      }
-
+      
+      // Hide thumbnail and show video container
       thumbnail.style.display = 'none';
       container.style.display = 'block';
-      container.style.paddingBottom = '40%';
 
-      currentPlayer = new YT.Player(`player-${videoId}`, {
+      // Create player
+      new YT.Player(`player-${videoId}`, {
         videoId: videoId,
         playerVars: {
           'autoplay': 1,
-          'origin': window.location.origin,
+          'origin': window.location.origin,   // Ensure this is your own domain
+          'widget_referrer': window.location.href,  // Same here, the current page URL
+          'enablejsapi': 1,
           'rel': 0
         },
         events: {
-          'onStateChange': function (event) {
-            if (event.data === YT.PlayerState.ENDED) {
-              container.style.display = 'none';
-              thumbnail.style.display = 'block';
-              container.style.paddingBottom = '56.25%';
-            }
-          },
-          'onError': function (event) {
+          'onError': function(event) {
             console.error('YouTube player error:', event);
             alert("Sorry, the video failed to load. Please try again.");
             thumbnail.style.display = 'block';
             container.style.display = 'none';
-            container.style.paddingBottom = '56.25%';
           }
         }
       });
