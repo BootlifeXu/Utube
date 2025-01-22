@@ -129,8 +129,8 @@
     .video-container {
       display: none;
       position: relative;
-      width: 100%;
-      padding-bottom: 56.25%;
+      width: 300px;  /* Fixed width */
+      height: 300px; /* Fixed height */
       margin-top: 20px;
     }
 
@@ -146,12 +146,28 @@
     .video-info h3 {
       margin: 10px 0;
       color: #005f6b;
-      font-size: 18px;
+      font-size: 15px;
     }
 
     .channel-name {
       color: #666;
-      font-size: 14px;
+      font-size: 12px;
+    }
+
+    #nextBtn {
+      padding: 12px 20px;
+      font-size: 16px;
+      background-color: #005f6b;
+      color: #ffffff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 20px;
+      display: none;
+    }
+
+    #nextBtn:hover {
+      background-color: #004c55;
     }
   </style>
 </head>
@@ -161,6 +177,7 @@
   <input type="text" id="searchInput" placeholder="Enter video name">
   <button id="searchBtn">Search</button>
   <div id="results"></div>
+  <button id="nextBtn">Next</button>
 
   <script>
     const CLIENT_ID = '1040996601945-glj12sf5la34kb04aku691c0o5ddeoai.apps.googleusercontent.com';
@@ -169,14 +186,23 @@
     let tokenClient;
     let accessToken = null;
     let currentPlayer = null;
+    let nextPageToken = null;
 
     window.onload = function () {
+      // Check if the token is already stored in localStorage
+      const storedToken = localStorage.getItem('accessToken');
+      if (storedToken) {
+        accessToken = storedToken;
+        console.log('Using stored token');
+      }
+
       tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
         scope: 'https://www.googleapis.com/auth/youtube.readonly',
         callback: (tokenResponse) => {
           if (tokenResponse && tokenResponse.access_token) {
             accessToken = tokenResponse.access_token;
+            localStorage.setItem('accessToken', accessToken);  // Store token in localStorage
             console.log('Successfully authenticated');
           }
         },
@@ -199,7 +225,7 @@
       }
     }
 
-    async function loadYouTubeData() {
+    async function loadYouTubeData(pageToken = '') {
       const query = document.getElementById('searchInput').value.trim();
       if (!query) {
         alert('Please enter a search term!');
@@ -214,7 +240,7 @@
 
       try {
         const response = await fetch(
-          `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=10&key=${API_KEY}`,
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=10&key=${API_KEY}&pageToken=${pageToken}`,
           {
             headers: {
               'Authorization': `Bearer ${accessToken}`
@@ -226,6 +252,12 @@
 
         if (data.items) {
           displayResults(data.items);
+          if (data.nextPageToken) {
+            nextPageToken = data.nextPageToken;
+            document.getElementById('nextBtn').style.display = 'inline-block';
+          } else {
+            document.getElementById('nextBtn').style.display = 'none';
+          }
         } else {
           alert('No results found for your search.');
         }
@@ -268,12 +300,10 @@
         const previousContainer = document.querySelector(`#player-${currentPlayer.getVideoData().video_id}`);
         previousContainer.parentElement.querySelector('.video-thumbnail').style.display = 'block';
         previousContainer.style.display = 'none';
-        previousContainer.style.paddingBottom = '56.25%';
       }
 
       thumbnail.style.display = 'none';
       container.style.display = 'block';
-      container.style.paddingBottom = '40%';
 
       currentPlayer = new YT.Player(`player-${videoId}`, {
         videoId: videoId,
@@ -287,7 +317,6 @@
             if (event.data === YT.PlayerState.ENDED) {
               container.style.display = 'none';
               thumbnail.style.display = 'block';
-              container.style.paddingBottom = '56.25%';
             }
           },
           'onError': function (event) {
@@ -295,13 +324,13 @@
             alert("Sorry, the video failed to load. Please try again.");
             thumbnail.style.display = 'block';
             container.style.display = 'none';
-            container.style.paddingBottom = '56.25%';
           }
         }
       });
     }
 
     document.getElementById('searchBtn').addEventListener('click', loadYouTubeData);
+    document.getElementById('nextBtn').addEventListener('click', () => loadYouTubeData(nextPageToken));
   </script>
 </body>
 </html>
