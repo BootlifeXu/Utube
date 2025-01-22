@@ -153,6 +153,22 @@
       color: #666;
       font-size: 14px;
     }
+
+    #nextBtn {
+      padding: 12px 20px;
+      font-size: 16px;
+      background-color: #005f6b;
+      color: #ffffff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 20px;
+      display: none;
+    }
+
+    #nextBtn:hover {
+      background-color: #004c55;
+    }
   </style>
 </head>
 <body>
@@ -161,6 +177,7 @@
   <input type="text" id="searchInput" placeholder="Enter video name">
   <button id="searchBtn">Search</button>
   <div id="results"></div>
+  <button id="nextBtn">Next</button>
 
   <script>
     const CLIENT_ID = '1040996601945-glj12sf5la34kb04aku691c0o5ddeoai.apps.googleusercontent.com';
@@ -169,6 +186,7 @@
     let tokenClient;
     let accessToken = null;
     let currentPlayer = null;
+    let nextPageToken = null;
 
     window.onload = function () {
       // Check if the token is already stored in localStorage
@@ -207,7 +225,7 @@
       }
     }
 
-    async function loadYouTubeData() {
+    async function loadYouTubeData(pageToken = '') {
       const query = document.getElementById('searchInput').value.trim();
       if (!query) {
         alert('Please enter a search term!');
@@ -222,7 +240,7 @@
 
       try {
         const response = await fetch(
-          `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=10&key=${API_KEY}`,
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=10&key=${API_KEY}&pageToken=${pageToken}`,
           {
             headers: {
               'Authorization': `Bearer ${accessToken}`
@@ -234,6 +252,12 @@
 
         if (data.items) {
           displayResults(data.items);
+          if (data.nextPageToken) {
+            nextPageToken = data.nextPageToken;
+            document.getElementById('nextBtn').style.display = 'inline-block';
+          } else {
+            document.getElementById('nextBtn').style.display = 'none';
+          }
         } else {
           alert('No results found for your search.');
         }
@@ -309,7 +333,8 @@
       });
     }
 
-    document.getElementById('searchBtn').addEventListener('click', loadYouTubeData);
+    document.getElementById('searchBtn').addEventListener('click', () => loadYouTubeData());
+    document.getElementById('nextBtn').addEventListener('click', () => loadYouTubeData(nextPageToken));
   </script>
 </body>
 </html>
