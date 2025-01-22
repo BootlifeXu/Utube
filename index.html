@@ -98,17 +98,6 @@
       width: 100%;
       height: 100%;
     }
-
-    .retry-button {
-      display: none;
-      padding: 10px 20px;
-      background-color: #e74c3c;
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      margin-top: 10px;
-      cursor: pointer;
-    }
   </style>
 </head>
 <body>
@@ -124,6 +113,7 @@
     let tokenClient;
     let accessToken = null;
 
+    // Initialize OAuth2 on page load
     window.onload = function () {
       tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
@@ -131,6 +121,7 @@
         callback: (tokenResponse) => {
           if (tokenResponse.access_token) {
             accessToken = tokenResponse.access_token;
+            localStorage.setItem('youtube_access_token', accessToken); // Store the token
           }
         },
       });
@@ -144,7 +135,18 @@
         document.getElementById("buttonDiv"),
         { theme: "outline", size: "large" }
       );
+
+      checkStoredToken(); // Check if a stored token exists
     };
+
+    // Check stored token in localStorage
+    function checkStoredToken() {
+      const storedToken = localStorage.getItem('youtube_access_token');
+      if (storedToken) {
+        accessToken = storedToken;
+        console.log('Token loaded from storage:', accessToken);
+      }
+    }
 
     function handleCredentialResponse(response) {
       if (response.credential) {
@@ -152,6 +154,7 @@
       }
     }
 
+    // Function to call YouTube API
     async function loadYouTubeData() {
       const query = document.getElementById('searchInput').value.trim();
       if (!query) {
@@ -159,6 +162,7 @@
         return;
       }
 
+      // If token does not exist, prompt for authentication
       if (!accessToken) {
         alert('Please sign in first!');
         tokenClient.requestAccessToken();
@@ -180,6 +184,7 @@
       }
     }
 
+    // Display video results
     function displayResults(videos) {
       const resultsDiv = document.getElementById('results');
       resultsDiv.innerHTML = '';
@@ -201,6 +206,7 @@
       });
     }
 
+    // Load video into iframe
     function loadVideo(videoId, thumbnailElement) {
       const container = thumbnailElement.nextElementSibling;
 
