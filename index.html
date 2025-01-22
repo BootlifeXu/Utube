@@ -7,7 +7,6 @@
   <script src="https://accounts.google.com/gsi/client"></script>
   <script src="https://www.youtube.com/iframe_api"></script>
   <style>
-    /* ... (keeping existing styles unchanged) ... */
     /* Global Styles */
     body {
       font-family: 'Arial', sans-serif;
@@ -174,7 +173,6 @@
     const API_KEY = 'AIzaSyBtc90LkMjXkFE80-NinZmBUHeD6Fn0sVI';
     let tokenClient;
     let accessToken = null;
-    let isAuthenticated = false;
 
     window.onload = function () {
       tokenClient = google.accounts.oauth2.initTokenClient({
@@ -183,7 +181,6 @@
         callback: (tokenResponse) => {
           if (tokenResponse && tokenResponse.access_token) {
             accessToken = tokenResponse.access_token;
-            isAuthenticated = true;
             console.log('Successfully authenticated');
           }
         },
@@ -201,7 +198,7 @@
     };
 
     function handleCredentialResponse(response) {
-      if (response.credential && !isAuthenticated) {
+      if (response.credential) {
         tokenClient.requestAccessToken();
       }
     }
@@ -213,7 +210,7 @@
         return;
       }
 
-      if (!isAuthenticated) {
+      if (!accessToken) {
         alert('Please sign in first!');
         tokenClient.requestAccessToken();
         return;
@@ -269,15 +266,12 @@
       container.style.display = 'block';
       retryButton.style.display = 'none';
 
-      // Clear existing player if any
-      container.innerHTML = '';
-      
       new YT.Player(`player-${videoId}`, {
         videoId: videoId,
         playerVars: { autoplay: 1, rel: 0 },
         events: {
-          onError: (event) => {
-            console.error('YouTube player error:', event.data);
+          onError: () => {
+            alert('Failed to load video. Please check your internet connection.');
             container.style.display = 'none';
             retryButton.style.display = 'block';
             thumbnailElement.style.display = 'block';
@@ -289,24 +283,10 @@
     function retryVideo(videoId, retryButton) {
       const videoItem = retryButton.closest('.video-item');
       const thumbnailElement = videoItem.querySelector('.video-thumbnail');
-      const container = videoItem.querySelector('.video-container');
-      
-      // Reset the container for the new player
-      container.innerHTML = `<div id="player-${videoId}"></div>`;
-      
       loadVideo(videoId, thumbnailElement);
     }
 
-    // Add event listeners
     document.getElementById('searchBtn').addEventListener('click', loadYouTubeData);
-    
-    // Add Enter key support
-    document.getElementById('searchInput').addEventListener('keypress', function(event) {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        loadYouTubeData();
-      }
-    });
   </script>
 </body>
 </html>
