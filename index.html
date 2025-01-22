@@ -7,7 +7,6 @@
   <script src="https://accounts.google.com/gsi/client"></script>
   <script src="https://www.youtube.com/iframe_api"></script>
   <style>
-    /* Same styles as before */
     /* Global Styles */
     body {
       font-family: 'Arial', sans-serif;
@@ -273,7 +272,6 @@
         events: {
           onError: () => {
             alert('Failed to load video. Please check your internet connection.');
-            container.innerHTML = ""; // Clear video
             container.style.display = 'none';
             retryButton.style.display = 'block';
             thumbnailElement.style.display = 'block';
