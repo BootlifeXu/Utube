@@ -3,24 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>YouTube Search</title>
+  <title>Search</title>
   <script src="https://accounts.google.com/gsi/client"></script>
   <script src="https://www.youtube.com/iframe_api"></script>
   <style>
-    /* Previous CSS remains the same */
-    #errorLog {
-      background-color: #ffeeee;
-      color: #cc0000;
-      width: 100%;
-      max-width: 600px;
-      margin-top: 20px;
-      padding: 10px;
-      border-radius: 5px;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      display: none;
-    }
-       body {
+    body {
       font-family: 'Arial', sans-serif;
       margin: 0;
       padding: 0;
@@ -97,7 +84,7 @@
     .video-container {
       position: relative;
       width: 100%;
-      padding-top: 56.25%; /* 16:9 Aspect Ratio */
+      padding-top: 56.25%;
       margin-top: 10px;
       overflow: hidden;
       background-color: black;
@@ -113,218 +100,164 @@
   </style>
 </head>
 <body>
-  <h1>YouTube Search</h1>
+  <h1>Search</h1>
   <div id="buttonDiv"></div>
   <input type="text" id="searchInput" placeholder="Enter video name">
   <button id="searchBtn">Search</button>
   <div id="results"></div>
-  <div id="errorLog"></div>
 
   <script>
-const CLIENT_ID = '1040996601945-glj12sf5la34kb04aku691c0o5ddeoai.apps.googleusercontent.com';
-const API_KEY = 'AIzaSyBtc90LkMjXkFE80-NinZmBUHeD6Fn0sVI';
-let tokenClient;
-let accessToken = null;
+    const CLIENT_ID = '1040996601945-glj12sf5la34kb04aku691c0o5ddeoai.apps.googleusercontent.com';
+    const API_KEY = 'AIzaSyBtc90LkMjXkFE80-NinZmBUHeD6Fn0sVI';
+    let tokenClient;
+    let accessToken = null;
 
-// Enhanced Error Logging Function
-function logError(message, error = null) {
-  const errorLog = document.getElementById('errorLog');
-  errorLog.style.display = 'block';
-  errorLog.textContent = `ERROR: ${message}\n`;
-  
-  if (error) {
-    errorLog.textContent += `Details: ${JSON.stringify(error, null, 2)}\n`;
-    console.error(message, error);
-  }
-}
-
-// Comprehensive Token Validation
-async function validateToken(token) {
-  try {
-    const response = await fetch(`https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${token}`);
-    const tokenInfo = await response.json();
-    
-    if (!response.ok) {
-      logError('Token validation failed', tokenInfo);
-      return false;
+    // Validate the access token using Google's Token Info API
+    async function isValidToken(token) {
+      try {
+        const response = await fetch(`https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${token}`);
+        return response.ok;
+      } catch (error) {
+        console.error('Token validation failed:', error);
+        return false;
+      }
     }
-    
-    // Check token expiration
-    const currentTime = Math.floor(Date.now() / 1000);
-    if (tokenInfo.exp && currentTime >= tokenInfo.exp) {
-      logError('Token has expired');
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    logError('Token validation error', error);
-    return false;
-  }
-}
 
-// Improved Token Management
-async function manageToken() {
-  const storedToken = localStorage.getItem('youtube_access_token');
-  
-  if (storedToken) {
-    const isValid = await validateToken(storedToken);
-    if (isValid) {
-      accessToken = storedToken;
-      return true;
-    } else {
-      localStorage.removeItem('youtube_access_token');
-      logError('Stored token is invalid. Please re-authenticate.');
+    // Check for a stored token and validate it
+    async function checkStoredToken() {
+      const storedToken = localStorage.getItem('youtube_access_token');
+      if (storedToken) {
+        const isTokenValid = await isValidToken(storedToken);
+        if (isTokenValid) {
+          accessToken = storedToken;
+          console.log('Stored token is valid:', accessToken);
+          return;
+        }
+      }
+      console.log('No valid token found or token expired.');
     }
-  }
-  
-  return false;
-}
 
-// Handle Google Sign-In with Enhanced Error Handling
-function handleCredentialResponse(response) {
-  try {
-    if (response.credential) {
-      tokenClient.requestAccessToken({
-        prompt: '',
+    // Handle Google Sign-In response
+    function handleCredentialResponse(response) {
+      if (response.credential) {
+        tokenClient.requestAccessToken((tokenResponse) => {
+          if (tokenResponse.access_token) {
+            accessToken = tokenResponse.access_token;
+            localStorage.setItem('youtube_access_token', accessToken);
+            console.log('Access token granted:', accessToken);
+          } else {
+            console.error('Failed to obtain access token.');
+          }
+        });
+      }
+    }
+
+    // Function to load YouTube video search results
+    async function loadYouTubeData() {
+      const query = document.getElementById('searchInput').value.trim();
+      if (!query) {
+        alert('Please enter a search term!');
+        return;
+      }
+
+      if (!accessToken || !(await isValidToken(accessToken))) {
+        alert('Please sign in first!');
+        tokenClient.requestAccessToken();
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=10&key=${API_KEY}`,
+          {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          }
+        );
+
+        if (response.status === 401) {
+          alert('Session expired. Please sign in again.');
+          tokenClient.requestAccessToken();
+          return;
+        }
+
+        const data = await response.json();
+        if (data.items) displayResults(data.items);
+        else alert('No results found for your search.');
+      } catch (error) {
+        console.error('Error fetching video data:', error);
+        alert('Failed to fetch video data. Please try again later.');
+      }
+    }
+
+    // Display the search results in the UI
+    function displayResults(videos) {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '';
+
+      videos.forEach((video) => {
+        const videoDiv = document.createElement('div');
+        videoDiv.className = 'video-item';
+
+        videoDiv.innerHTML = `
+          <h3>${video.snippet.title}</h3>
+          <p>Channel: ${video.snippet.channelTitle}</p>
+          <div class="video-thumbnail" onclick="loadVideo('${video.id.videoId}', this)">
+            <img src="${video.snippet.thumbnails.high.url}" alt="${video.snippet.title}">
+          </div>
+          <div class="video-container" id="player-${video.id.videoId}"></div>
+        `;
+
+        resultsDiv.appendChild(videoDiv);
+      });
+    }
+
+    // Load a video into an iframe for playback
+    async function loadVideo(videoId, thumbnailElement) {
+      if (!accessToken || !(await isValidToken(accessToken))) {
+        alert('Please sign in to play videos.');
+        tokenClient.requestAccessToken();
+        return;
+      }
+
+      const container = thumbnailElement.nextElementSibling;
+
+      thumbnailElement.style.display = 'none';
+      container.style.display = 'block';
+
+      new YT.Player(`player-${videoId}`, {
+        videoId: videoId,
+        playerVars: { autoplay: 1, rel: 0 },
+      });
+    }
+
+    // Initialize the application on page load
+    window.onload = async function () {
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: 'https://www.googleapis.com/auth/youtube.readonly',
         callback: (tokenResponse) => {
           if (tokenResponse.access_token) {
             accessToken = tokenResponse.access_token;
             localStorage.setItem('youtube_access_token', accessToken);
-            console.log('New access token obtained successfully');
-          } else {
-            logError('Failed to obtain access token');
+            console.log('New access token obtained:', accessToken);
           }
         },
-        error_callback: (error) => {
-          logError('Token request failed', error);
-        }
       });
-    }
-  } catch (error) {
-    logError('Sign-in process error', error);
-  }
-}
 
-// Enhanced YouTube Data Loading
-async function loadYouTubeData() {
-  const query = document.getElementById('searchInput').value.trim();
-  
-  if (!query) {
-    logError('Search query is empty');
-    return;
-  }
+      google.accounts.id.initialize({
+        client_id: CLIENT_ID,
+        callback: handleCredentialResponse,
+      });
 
-  // Ensure token is valid before searching
-  const tokenValid = await manageToken();
-  if (!tokenValid) {
-    // Trigger sign-in process if no valid token
-    google.accounts.id.prompt();
-    return;
-  }
+      google.accounts.id.renderButton(
+        document.getElementById("buttonDiv"),
+        { theme: "outline", size: "large" }
+      );
 
-  try {
-    const response = await fetch(
-      `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=10&key=${API_KEY}`,
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }
-    );
+      await checkStoredToken();
+    };
 
-    if (response.status === 401) {
-      logError('Unauthorized: Session expired');
-      google.accounts.id.prompt();
-      return;
-    }
-
-    const data = await response.json();
-    
-    if (data.items && data.items.length > 0) {
-      displayResults(data.items);
-    } else {
-      logError('No results found for your search');
-    }
-  } catch (error) {
-    logError('Error fetching video data', error);
-  }
-}
-
-// Existing displayResults function remains the same
-    // Display the search results in the UI
-function displayResults(videos) {
-  const resultsDiv = document.getElementById('results');
-  resultsDiv.innerHTML = '';
-
-  videos.forEach((video) => {
-    const videoDiv = document.createElement('div');
-    videoDiv.className = 'video-item';
-
-    videoDiv.innerHTML = `
-      <h3>${video.snippet.title}</h3>
-      <p>Channel: ${video.snippet.channelTitle}</p>
-      <div class="video-thumbnail" onclick="loadVideo('${video.id.videoId}', this)">
-        <img src="${video.snippet.thumbnails.high.url}" alt="${video.snippet.title}">
-      </div>
-      <div class="video-container" id="player-${video.id.videoId}"></div>
-    `;
-
-    resultsDiv.appendChild(videoDiv);
-  });
-}
-
-// Enhanced Video Loading with Better Error Handling
-function loadVideo(videoId, thumbnailElement) {
-  if (!accessToken) {
-    logError('No valid authentication token');
-    google.accounts.id.prompt();
-    return;
-  }
-
-  try {
-    const container = thumbnailElement.nextElementSibling;
-    thumbnailElement.style.display = 'none';
-    container.style.display = 'block';
-
-    new YT.Player(`player-${videoId}`, {
-      videoId: videoId,
-      playerVars: { autoplay: 1, rel: 0 },
-      events: {
-        onError: (event) => {
-          logError(`YouTube Player Error: ${event.data}`);
-        }
-      }
-    });
-  } catch (error) {
-    logError('Video loading failed', error);
-  }
-}
-
-// Initialization with Comprehensive Setup
-window.onload = async function () {
-  try {
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID,
-      scope: 'https://www.googleapis.com/auth/youtube.readonly',
-    });
-
-    google.accounts.id.initialize({
-      client_id: CLIENT_ID,
-      callback: handleCredentialResponse,
-    });
-
-    google.accounts.id.renderButton(
-      document.getElementById("buttonDiv"),
-      { theme: "outline", size: "large" }
-    );
-
-    // Check and manage existing token on load
-    await manageToken();
-  } catch (error) {
-    logError('Initialization failed', error);
-  }
-};
-
-document.getElementById('searchBtn').addEventListener('click', loadYouTubeData);
+    document.getElementById('searchBtn').addEventListener('click', loadYouTubeData);
   </script>
 </body>
 </html>
