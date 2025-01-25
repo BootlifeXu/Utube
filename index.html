@@ -250,6 +250,27 @@ async function loadYouTubeData() {
 }
 
 // Existing displayResults function remains the same
+    // Display the search results in the UI
+function displayResults(videos) {
+  const resultsDiv = document.getElementById('results');
+  resultsDiv.innerHTML = '';
+
+  videos.forEach((video) => {
+    const videoDiv = document.createElement('div');
+    videoDiv.className = 'video-item';
+
+    videoDiv.innerHTML = `
+      <h3>${video.snippet.title}</h3>
+      <p>Channel: ${video.snippet.channelTitle}</p>
+      <div class="video-thumbnail" onclick="loadVideo('${video.id.videoId}', this)">
+        <img src="${video.snippet.thumbnails.high.url}" alt="${video.snippet.title}">
+      </div>
+      <div class="video-container" id="player-${video.id.videoId}"></div>
+    `;
+
+    resultsDiv.appendChild(videoDiv);
+  });
+}
 
 // Enhanced Video Loading with Better Error Handling
 function loadVideo(videoId, thumbnailElement) {
